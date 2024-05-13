@@ -20,4 +20,4 @@
 
 # Note: The Errors that are being printed in the stdout means that that particular course does not have that specific attribute and they should be ignored
 
-![image for the working scrapper](https://imgur.com/a/coursera-webscrapper-RfDzZxw)
+![image for the working scrapper](https://imgur.com/coursera-hNRi2cY)
