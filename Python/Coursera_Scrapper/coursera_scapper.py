@@ -10,7 +10,6 @@ import bs4
 BASE_URL = "https://www.coursera.org"
 SEARCH_BASE_URL = "https://www.coursera.org/search?query="
 
-# pylint: disable=W0718
 # pylint: disable=W0621
 def get_soup(url: str, query: str, page: int = None) -> bs4.BeautifulSoup:
     """
@@ -26,11 +25,11 @@ def get_soup(url: str, query: str, page: int = None) -> bs4.BeautifulSoup:
         response.raise_for_status()
         soup = bs4.BeautifulSoup(response.text, 'html.parser')
         return soup
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred while making the request: {e}")
+    except requests.exceptions.RequestException as error:
+        print(f"Error occurred while making the request: {error}")
         return None
-    except Exception as e:
-        print(f"\nError occurred while parsing the HTML: {e}\tSkipping...\n")
+    except bs4.FeatureNotFound as error:
+        print(f"\nError occurred while parsing the HTML: {error}\tSkipping...\n")
         return None
 
 
@@ -47,8 +46,8 @@ def get_course_links(soup: bs4.BeautifulSoup) -> list[str]:
         course_links = soup.select('a[id*=product-card-title]')
         courses_links = [link.get('href') for link in course_links]
         return courses_links
-    except Exception as e:
-        print(f"\nError occurred while getting course links: {e}\tSkipping...\n")
+    except (AttributeError, ValueError, IndexError) as error:
+        print(f"\nError occurred while getting course links: {error}\tSkipping...\n")
         return None
 
 
@@ -59,8 +58,8 @@ def get_title(soup: bs4.BeautifulSoup) -> str:
     try:
         title = soup.select_one('h1[data-e2e=hero-title]').text
         return title
-    except Exception as e:
-        print(f"\nError occurred while getting course title: {e}\tSkipping...\n")
+    except (AttributeError, ValueError) as error:
+        print(f"\nError occurred while getting course title: {error}\tSkipping...\n")
         return None
 
 
@@ -78,12 +77,15 @@ def get_course_ratings_reviews(soup: bs4.BeautifulSoup) -> str:
                 break
             except ValueError:
                 continue
-    except Exception as e:
-        print(f"\nError occurred while getting ratings: {e}\tSkipping...\n")
+    except (AttributeError, ValueError) as error:
+        print(f"\nError occurred while getting ratings: {error}\tSkipping...\n")
     try:
         reviews = soup.select_one('p.css-vac8rf:-soup-contains("review")').text
-    except Exception as e:
-        print(f"\nError occurred while getting reviews: {e}\tSkipping...\n")
+    except requests.exceptions.RequestException as error:
+        print(f"\nError occurred while making the request: {error}\tSkipping...\n")
+        reviews = None
+    except (bs4.FeatureNotFound, AttributeError, ValueError) as error:
+        print(f"\nError occurred while parsing the HTML: {error}\tSkipping...\n")
         reviews = None
 
     result = f"{ratings} {reviews}"
@@ -98,8 +100,11 @@ def get_start_date(soup: bs4.BeautifulSoup) -> str:
         start_date = soup.select_one('div.startdate').text
         start_date = start_date.replace('Starts', '').strip()
         return start_date
-    except Exception as e:
-        print(f"\nError occurred while getting start date: {e}\tSkipping...\n")
+    except requests.exceptions.RequestException as error:
+        print(f"\nError occurred while making the request: {error}\tSkipping...\n")
+        return None
+    except (AttributeError, ValueError, bs4.FeatureNotFound) as error:
+        print(f"\nError occurred while parsing the HTML: {error}\tSkipping...\n")
         return None
 
 
@@ -115,8 +120,8 @@ def get_course_duration(soup: bs4.BeautifulSoup) -> str:
                 course_duration = text
                 break
         return course_duration
-    except Exception as e:
-        print(f"\nError occurred while getting course duration: {e}\tSkipping...\n")
+    except (AttributeError, ValueError, UnboundLocalError) as error:
+        print(f"\nError occurred while getting course duration: {error}\tSkipping...\n")
         return None
 
 
@@ -132,8 +137,8 @@ def get_difficulty(soup: bs4.BeautifulSoup) -> str:
                 difficulty = text
                 break
         return difficulty
-    except Exception as e:
-        print(f"\nError occurred while getting difficulty: {e}\tSkipping...\n")
+    except (AttributeError, ValueError, UnboundLocalError) as error:
+        print(f"\nError occurred while getting difficulty: {error}\tSkipping...\n")
         return None
 
 
@@ -148,8 +153,8 @@ def get_skills(soup: bs4.BeautifulSoup) -> str:
             li_tags = ul_tag.find_all('li')
             skills_list = [li.text for li in li_tags]
         return '; '.join(skills_list)
-    except Exception as e:
-        print(f"\nError occurred while getting skills: {e}\tSkipping...\n")
+    except (AttributeError, ValueError, UnboundLocalError) as error:
+        print(f"\nError occurred while getting skills: {error}\tSkipping...\n")
         return None
 
 
@@ -161,8 +166,8 @@ def append_to_csv(query: str, line: str) -> None:
     header = ["Index",
               "Title",
               "Course Link",
-              "Ratings & Reviews", 
-              "Difficulty", 
+              "Ratings & Reviews",
+              "Difficulty",
               "Start Date",
               "Course Duration",
               "Skills Gained"
